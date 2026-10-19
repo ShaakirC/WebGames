@@ -1,0 +1,26 @@
+/* Mystery Number: everything scoped under .game--mystery-number.
+   Settings bar, player columns, counters and the secret panel come from base.css. */
+
+/* Notes */
+.game--mystery-number .mn-notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.game--mystery-number .mn-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 6px 6px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.game--mystery-number .mn-note.is-editing { padding: 4px; }
+.game--mystery-number .mn-note__text { flex: 1; overflow-wrap: anywhere; }
+.game--mystery-number .mn-note__text.is-editable { cursor: text; }
+.game--mystery-number .mn-note.is-wrong { background: var(--no-soft); color: var(--no); font-weight: 700; }
+.game--mystery-number .mn-note.is-correct { background: var(--yes-soft); color: var(--yes); font-weight: 800; }
+
+/* Forms */
+.game--mystery-number .mn-form { display: flex; gap: 8px; }
+.game--mystery-number .mn-form .input { flex: 1; min-width: 0; width: auto; }
+.game--mystery-number .mn-guess { display: grid; gap: 6px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.game--mystery-number .mn-guess__input { font-weight: 700; }
+.game--mystery-number .mn-guess__feedback { color: var(--no); font-weight: 800; animation: shake .35s ease; }

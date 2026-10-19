@@ -1,0 +1,59 @@
+/* 20 Questions: everything scoped under .game--twenty-questions.
+   Settings bar, player columns, counters and the secret panel come from base.css. */
+
+/* Question-limit stepper inside the settings bar */
+.game--twenty-questions .tq-limit { flex: none; display: flex; align-items: center; gap: 6px; }
+.game--twenty-questions .tq-limit .settings-bar__label { margin-right: 4px; }
+.game--twenty-questions .tq-step { width: 38px; padding: 0; font-size: 1.15rem; }
+.game--twenty-questions .tq-step--inf { margin-left: 4px; }
+.game--twenty-questions .tq-step.is-active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.game--twenty-questions .tq-limit__value {
+  min-width: 2.2ch;
+  text-align: center;
+  font-size: 1.25rem; font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Question log */
+.game--twenty-questions .qlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.game--twenty-questions .qlist__item {
+  display: grid;
+  grid-template-columns: 26px 1fr auto auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.game--twenty-questions .qlist__item--over { outline: 1px dashed var(--no); }
+.game--twenty-questions .qlist__item.is-editing { grid-template-columns: 26px 1fr auto; padding: 4px 4px 4px 10px; }
+.game--twenty-questions .qlist__num { color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+.game--twenty-questions .qlist__text { overflow-wrap: anywhere; cursor: text; }
+.game--twenty-questions .qlist__text em { color: var(--muted); }
+
+.game--twenty-questions .answer {
+  min-width: 70px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 999px;
+  font-weight: 750; font-size: .85rem;
+  cursor: pointer;
+}
+.game--twenty-questions .answer--yes { background: var(--yes-soft); color: var(--yes); }
+.game--twenty-questions .answer--no { background: var(--no-soft); color: var(--no); }
+.game--twenty-questions .answer--maybe { background: var(--maybe-soft); color: var(--maybe); }
+
+/* Add-question form */
+.game--twenty-questions .qform { display: grid; gap: 8px; }
+.game--twenty-questions .qform__answers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.game--twenty-questions .answer-btn { border: none; }
+.game--twenty-questions .answer-btn.answer--yes { background: var(--yes-soft); color: var(--yes); }
+.game--twenty-questions .answer-btn.answer--no { background: var(--no-soft); color: var(--no); }
+.game--twenty-questions .answer-btn.answer--maybe { background: var(--maybe-soft); color: var(--maybe); }
+
+.game--twenty-questions .btn--win {
+  border: 2px dashed var(--pc);
+  background: transparent;
+  color: var(--pc);
+}
+.game--twenty-questions .btn--win:hover { background: var(--pc-soft); }
