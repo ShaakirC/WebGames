@@ -32,8 +32,13 @@ system.
 - **Simplest:** double-click `index.html`. Everything works over `file://`.
 - **Local server (optional, for phone testing on the same Wi‑Fi):**
   `npx serve .` or `python -m http.server 8000`, then open the LAN IP.
-- **Hosting (optional):** it's a static site, so GitHub Pages, Netlify or
-  Cloudflare Pages work with no config.
+- **Hosting (live):** GitHub Pages from the `main` branch, root folder, of
+  [ShaakirC/WebGames](https://github.com/ShaakirC/WebGames), served on the `games.` subdomain
+  of the owner's domain (registered at domains.co.za, with a DNS `CNAME games → shaakirc.github.io`).
+  Every push to `main` deploys automatically.
+  - GitHub keeps a `CNAME` file in the repo root for the custom domain. **Don't delete it.** If it
+    was added through the GitHub UI, `git pull` before pushing.
+  - `.nojekyll` stops GitHub Pages from hiding files whose names start with `_` (e.g. `_template.js`).
 
 > ⚠️ Do **not** convert scripts to ES modules (`type="module"`) without also
 > deciding to require a local server. Browsers block module imports over
