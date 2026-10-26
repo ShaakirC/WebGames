@@ -191,6 +191,8 @@ All keys are prefixed `gamenight:`.
 | `gamenight:game:first-last:state` | First & Last | see §6.2 |
 | `gamenight:game:chain-link:state` | Chain Link | see §6.3 |
 | `gamenight:game:mystery-number:state` | Mystery Number | see §6.4 |
+| `gamenight:game:word-budget:state` | Word Budget | see §6.5 |
+| `gamenight:game:word-budget:seen` | Word Budget | every word dealt so far (lowercase). Kept across rounds and score resets so words don't repeat |
 
 If you change a game's state shape incompatibly, either migrate it in `mount()`
 or rename the key (e.g. `state.v2`) so old saves don't crash the game.
@@ -402,6 +404,64 @@ never says higher or lower.** A guess is only ever ✓ or ✗. The first correct
 **Known limitations:** same as 20 Questions. On one screen the other player looks away while a number is
 typed, and numbers are stored in plain text in localStorage.
 
+### 6.5 Word Budget (`word-budget`)
+**How it's played:** the clue-giver sees a list of words (default 8). The guesser **never looks at the
+screen**. The clue-giver has a budget of spoken clue words (default 15) to get the guesser to say every
+word on the list. Elephant → "trunk". Beyoncé → "singer"… "Mariah Carey?" → "Destiny's"… "Beyoncé!".
+Guesses are free. Every word the clue-giver says costs one clue ("Destiny's Child" = 2). No part of the
+target word, no gestures, no "sounds like". These rules are on the honour system and shown on the gate screen.
+The list is fixed (no skipping or swapping words).
+
+**Rounds and scoring:** each round both players give clues once. Who goes first alternates by round.
+Most words guessed wins the round, fewer clues used breaks a tie, and anything else is a dead heat.
+The second clue-giver's gate shows the score to beat.
+
+**UI**
+- Toolbar: round, win tally, *New round*, *Reset scores*.
+- **Settings bar** (only before the round's first turn, then shown as read-only pills so both turns match):
+  - Words − / + (3–15).
+  - Clues − / + (from the number of words up to 50). Raising the word count above the clue budget pushes the clues up too.
+  - Timer − / + through Off, 1:00, 1:30, 2:00, 3:00, 5:00. Off by default.
+  - Word-type toggles: 🐘 Things, 🎤 People & places, 🏃 Actions, ✨ Describing. At least one stays on.
+    Defaults are Things + People & places. All settings carry over between rounds.
+- **Gate** ("🙉 X, you're giving clues. Y, turn around"), the rules, then **Deal my words**, which deals the
+  list and starts the clock.
+- **Play:** a HUD pinned under the top bar shows clues used / budget (red when out, "last guesses!"),
+  the countdown if the timer is on (red under 10s), words got, **↶ Undo** and **End turn**. Below it, one card
+  per word with **+1 clue** and **✓**, plus that word's clue count. Clues are logged against the card being
+  worked on, which gives the total. Once the budget is used up, +1 is disabled but ✓ still works
+  (for the last guess). Getting every word ends the turn automatically, and so does the timer running out.
+  Ending early with clues left asks for confirmation.
+- **Results:** a banner with the winner, and two columns (in turn order) listing each word ✓/✗ with its clue count.
+
+**Dealing:** each slot picks a category by weight (Things 4, People & places 3, Actions 1.5, Describing 1),
+then a random word from it that hasn't been dealt before (the `seen` key). When a category runs out,
+its words become available again. With the default types there are no repeats for about 85 rounds.
+
+**Word bank:** `js/games/word-budget-words.js`, about 1,900 words in four comma-separated lists
+(`#` lines are comments). It includes plenty of South African people, places, brands, food and slang.
+Duplicates (ignoring case) are dropped across all lists, keeping the first.
+
+**State** (`state` key)
+```js
+{
+  round: 1, wins: [0, 0],
+  settings: { words: 8, clues: 15, timer: 0 /* seconds, 0 = off */, types: ['things', 'people'] },
+  first: 0 | 1,             // who gives clues first this round
+  giver: 0 | 1,             // who is giving clues now
+  phase: 'gate' | 'play' | 'results',
+  turns: [                  // turns[i] = player i's turn as clue-giver, null until dealt
+    { cards: [{ word: 'Beyoncé', clues: 2, got: true }],
+      log: [0, 0, -1],      // n = clue on card n, -1-n = card n marked got (for Undo)
+      startedAt: ms, endedAt: null | ms, end: null | 'all' | 'stopped' | 'time' }, …
+  ],
+  winner: null | 0 | 1 | 'tie'
+}
+```
+
+**Known limitations:** the clue count relies on the clue-giver tapping honestly. A refresh mid-turn keeps the
+board (the guesser isn't looking), and the timer keeps running through it.
+
 ---
 
 ## 7. Manual test checklist
@@ -445,6 +505,11 @@ There are no automated tests yet. Before you finish a change:
 - [ ] Pause button for the timer.
 - [ ] Setting for the hint penalty (currently fixed at 10s).
 
+**Word Budget**
+- [ ] Grow the word bank, especially Actions and Describing.
+- [ ] Difficulty tags (easy / hard words) and a difficulty setting.
+- [ ] Option to skip or swap a word for a clue penalty (currently the list is fixed by design).
+
 **New game ideas** (brainstormed with the user 2026-10-19; ★ = the assistant's top picks)
 - [ ] ★ Categories: random letter + category + short countdown, first to answer taps to score.
 - [ ] ★ Would You Rather, "sync" mode: both secretly pick A/B, reveal together, score matches.
@@ -456,6 +521,12 @@ There are no automated tests yet. Before you finish a change:
 - [ ] Fishbowl / Taboo-style describe-it with a timer (needs a word bank).
 - [ ] Speed Tap reaction duel (false-start detection).
 - [ ] Simple tally / scoreboard for offline games.
+- [x] Clue-budget word game (user idea, 2026-10-26) → built as **Word Budget**.
+- [ ] **Redacted** (user idea, 2026-10-26, parked): player 1 sees a trivia question (10 words or fewer) and its
+      answer, and hides all but N words. Player 2 guesses the answer from what's left. Needs a vetted
+      question bank (one clear answer, the answer not in the question, no single giveaway word) with
+      accepted alternate answers. Open questions: how many words are kept, co-op or competitive scoring,
+      the number of guesses, and whether blanks show word positions.
 
 - [x] Shared UI helpers (`js/core/ui.js`): toolbar, secret panel, inline editor, focus-safe rendering.
 
@@ -477,3 +548,5 @@ There are no automated tests yet. Before you finish a change:
 - **2026-10-19:** 20 Questions: adjustable question limit (− / + by 5, ∞ unlimited) next to the category.
 - **2026-10-19:** Chain Link: words typed inline in each row. Now one solver at a time with a timer, lowest time wins,
   hints add +10s, and wrong guesses are no longer counted.
+- **2026-10-26:** Added Word Budget: a clue budget, a fixed word list, both players give clues each round,
+  an optional timer, and a word bank of about 1,900 words including South African names.
