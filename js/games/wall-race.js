@@ -13,6 +13,7 @@
   const SIZES = [5, 7, 9];
   const DEFAULT_SIZE = 7;
   const WALLS = { min: 3, max: 15, def: 8 }; // walls per player per round
+  const OPENING_WALLS = 3;                    // walls each player may place before play starts (from the budget)
   const STEPS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
 
   // Edge keys. 'h-r-c' sits between (r, c) and (r+1, c); 'v-r-c' between (r, c) and (r, c+1).
@@ -57,11 +58,12 @@
       size,
       budget: prev && typeof prev.budget === 'number' ? prev.budget : WALLS.def, // walls per player this round
       first,
-      turn: first,
+      phase: 'setup',  // 'setup' (each player places opening walls, first player first) -> 'play'
+      turn: first,     // whoever is acting: the setup player, then the player to move
       pawns: startPawns(size),
-      walls: [],       // [{ key, owner }]
+      walls: [],       // [{ key, owner, setup? }]
       moveNo: 0,       // actions taken this round
-      last: null,      // { type: 'move' | 'wall' | 'pass', by }
+      last: null,      // { type: 'move' | 'wall' | 'pass' | 'setup', by }
       undo: null,      // snapshot before the latest action
       winner: null,
     };
@@ -77,6 +79,7 @@
       let state = ctx.storage.get('state', null) || freshState();
       // Saves from before the wall budget existed: give them the default, or both − / + stay disabled.
       if (typeof state.budget !== 'number') state.budget = WALLS.def;
+      if (!state.phase) state.phase = 'play'; // saves from before the setup phase existed
       const save = () => ctx.storage.set('state', state);
       const commit = () => { save(); render(); };
       let justActed = false;
@@ -85,8 +88,11 @@
       const isOver = () => state.winner !== null;
       const blockedSet = () => new Set(state.walls.map((w) => w.key));
       const wallsLeft = (p) => state.budget - state.walls.filter((w) => w.owner === p).length;
+      const inSetup = () => state.phase === 'setup';
+      const openingPlaced = (p) => state.walls.filter((w) => w.owner === p && w.setup).length;
 
       function legalMoves(p) {
+        if (inSetup()) return [];
         const [r, c] = state.pawns[p];
         const other = state.pawns[1 - p];
         const blocked = blockedSet();
@@ -119,14 +125,15 @@
       }
 
       // ---- actions ---------------------------------------------------------
-      // Every action: snapshot for Undo, apply, then pass the turn (unless it won).
-      function act(apply) {
+      // Every action: snapshot for Undo, apply, then pass the turn (unless it won, or it's a setup step
+      // that manages the turn itself).
+      function act(apply, keepTurn = false) {
         if (isOver()) return;
         const { undo, ...before } = state;
         state.undo = JSON.parse(JSON.stringify(before));
         apply(state.turn);
         state.moveNo += 1;
-        if (state.winner === null) state.turn = 1 - state.turn;
+        if (state.winner === null && !keepTurn) state.turn = 1 - state.turn;
         justActed = true; // the next render animates just this action's wall or pawn
         commit();
       }
@@ -146,10 +153,36 @@
 
       function build(key) {
         if (wallsLeft(state.turn) <= 0 || !canBuild(key)) return;
+        if (inSetup()) {
+          if (openingPlaced(state.turn) >= OPENING_WALLS) return;
+          return act((p) => {
+            state.walls.push({ key, owner: p, setup: true });
+            state.last = { type: 'wall', by: p };
+            if (openingPlaced(p) >= OPENING_WALLS) endSetupTurn(); // the third wall moves things on by itself
+          }, true);
+        }
         act((p) => {
           state.walls.push({ key, owner: p });
           state.last = { type: 'wall', by: p };
         });
+      }
+
+      // The first player's setup hands over to the second player's; the second player's starts the race.
+      function endSetupTurn() {
+        if (state.turn === state.first) {
+          state.turn = 1 - state.first;
+        } else {
+          state.phase = 'play';
+          state.turn = state.first;
+        }
+      }
+
+      function doneSetup() {
+        if (!inSetup()) return;
+        act((p) => {
+          state.last = { type: 'setup', by: p };
+          endSetupTurn();
+        }, true);
       }
 
       function pass() {
@@ -238,11 +271,17 @@
         const players = ctx.players;
         const over = isOver();
         const me = players[state.turn];
-        const stuck = !over && legalMoves(state.turn).length === 0;
+        const setup = inSetup();
+        const placed = openingPlaced(state.turn);
+        const stuck = !over && !setup && legalMoves(state.turn).length === 0;
         const canWall = wallsLeft(state.turn) > 0;
         let hint = `${me.name}’s turn: step to a glowing square, or tap a gap to build a wall.`;
         if (!canWall) hint = `${me.name}’s turn: no walls left, step to a glowing square.`;
         if (stuck) hint = canWall ? `${me.name} is boxed in: build a wall or pass.` : `${me.name} is boxed in: pass.`;
+        if (setup) {
+          hint = `🧱 Setup: ${me.name}, place up to ${OPENING_WALLS} opening walls (${placed} / ${OPENING_WALLS}).` +
+            (state.turn === state.first ? ` ${players[1 - state.turn].name} sets up next.` : ' Then the race starts.');
+        }
         return h('div', { class: `wr ${me.cssClass}` },
           h('div', { class: 'wr-players' },
             players.map((p, i) => {
@@ -254,6 +293,8 @@
             })),
           !over && h('p', { class: 'wr-turn', 'aria-live': 'polite' }, hint),
           renderBoard(),
+          setup && h('button', { class: 'btn btn--primary btn--xl wr-done', onclick: doneSetup },
+            placed ? `✓ Done (${placed} / ${OPENING_WALLS})` : 'Skip: no opening walls'),
           stuck && h('button', { class: 'btn', onclick: pass }, 'Pass (no moves)'),
           h('p', { class: 'wr-rules' },
             'Walls stay for the rest of the round. Hatched gaps can’t be built on: they would cut someone off.'));
@@ -268,7 +309,7 @@
         const moves = over ? [] : legalMoves(state.turn);
         const canStep = (r, c) => moves.some(([rr, cc]) => rr === r && cc === c);
         const walls = new Map(state.walls.map((w) => [w.key, w]));
-        const canWall = !over && wallsLeft(state.turn) > 0;
+        const canWall = !over && wallsLeft(state.turn) > 0 && !(inSetup() && openingPlaced(state.turn) >= OPENING_WALLS);
         const items = [];
 
         const gap = (key, row, col, kind) => {

@@ -29,6 +29,7 @@
 .game--wall-race .wr-player__walls.is-out { color: var(--no); }
 .game--wall-race .wr-turn { margin: 0; font-weight: 750; color: var(--pc); text-align: center; overflow-wrap: anywhere; }
 .game--wall-race .wr-rules { margin: 0; max-width: 460px; color: var(--muted); font-size: .88rem; text-align: center; }
+.game--wall-race .wr-done { width: 100%; max-width: 320px; }
 
 /* ---------- Board ----------
    Squares sit on even tracks; the gaps between them (where walls go) are the thin odd tracks. */

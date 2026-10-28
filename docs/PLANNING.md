@@ -662,11 +662,21 @@ player without a route home** (breadth-first search; pawns don't count as blocki
 step (boxed in by walls plus the other pawn), you can build or *Pass*. The first pawn to reach its finish row wins the
 round. Who acts first alternates by round.
 
+**Opening setup** (user request, 2026-10-28): before the race, each player may place **up to 3 opening walls**
+(`OPENING_WALLS`), which come out of their budget. The round's first player sets up first (player 1 in round 1, then
+alternating, like everything else), then the other player, then the race starts with the first player to move. The
+third opening wall hands over automatically. **✓ Done (n / 3)** (or **Skip: no opening walls**) hands over early.
+Pawns can't move during setup, the no-sealing rule still applies, and Undo works. The second player sees the first
+player's walls before placing theirs.
+
 **UI**
 - Toolbar: round, win tally, **↶ Undo** (one level: undoes the latest action by either player, not after a win),
   *New round* (asks first mid-game), *Reset scores*.
 - **Settings bar:** two steppers (`ui.stepper`): Board 5×5, 7×7 (default) or 9×9, and Walls 3–15 per player
-  (default 8). They can only be changed before the first action, then they're shown as read-only pills. Both carry over.
+  (default 8). They can only be changed before the first action (including the first opening wall or Skip), then
+  they're shown as read-only pills. Both carry over.
+- **Setup:** the turn line reads "🧱 Setup: X, place up to 3 opening walls (1 / 3). Y sets up next." with a big
+  Done/Skip button under the board. No squares glow.
 - Player cards (⬆/⬇ shows which way each heads, plus "n walls left", red at 0). The current player's card is tinted.
   The turn line changes to "no walls left, step…" or "boxed in: pass" when needed.
 - **Board:** a CSS grid with squares on even tracks and thin gaps on odd tracks (`--gaps` = size − 1). Finish rows are
@@ -679,17 +689,20 @@ round. Who acts first alternates by round.
 **State** (`state` key)
 ```js
 {
-  round: 1, wins: [0, 0], size: 7, budget: 8, first: 0 | 1, turn: 0 | 1,
+  round: 1, wins: [0, 0], size: 7, budget: 8, first: 0 | 1,
+  phase: 'setup' | 'play',
+  turn: 0 | 1,                             // who's acting: the setup player, then the player to move
   pawns: [[r, c], [r, c]],                 // pawns[0] starts bottom-middle, pawns[1] top-middle
-  walls: [{ key: 'h-2-3' | 'v-4-1', owner }],  // h-r-c: below (r,c); v-r-c: right of (r,c)
-  moveNo: 0,                               // actions this round
-  last: null | { type: 'move' | 'wall' | 'pass', by },
+  walls: [{ key: 'h-2-3' | 'v-4-1', owner, setup? }],  // h-r-c: below (r,c); v-r-c: right of (r,c); setup = opening wall
+  moveNo: 0,                               // actions this round (setup walls and Done count)
+  last: null | { type: 'move' | 'wall' | 'pass' | 'setup', by },
   undo: null | <state snapshot without undo>,
   winner: null | 0 | 1
 }
 ```
 Walls left = `budget` minus that player's walls, never stored. A save without a numeric `budget` (from before it
-existed) gets the default on mount; otherwise both Walls buttons would stay disabled.
+existed) gets the default on mount; otherwise both Walls buttons would stay disabled. A save without `phase` (from
+before setup existed) is treated as `'play'`.
 
 ---
 
@@ -815,3 +828,4 @@ There are no automated tests yet. Before you finish a change:
 - **2026-10-28:** Added Dots & Boxes (3×3–6×6 grid via `ui.stepper`, closing a box claims it and gives another turn, most boxes wins).
 - **2026-10-28:** Added Gomoku (9×9–15×15, click to place on desktop, tap-preview + Place on touch, keyboard arrows). Added board/stone colour tokens to `base.css`.
 - **2026-10-28:** Added Wall Race (original race-and-block game: step or build a wall from a 3–15 budget, walls are permanent, no sealing anyone in, one-level Undo).
+- **2026-10-28:** Wall Race: opening setup. Each player places up to 3 walls (from their budget) before the race, first player first.
