@@ -201,6 +201,7 @@ All keys are prefixed `gamenight:`.
 | `gamenight:game:four-up:state` | Four Up | see §6.7 |
 | `gamenight:game:dots-and-boxes:state` | Dots & Boxes | see §6.8 |
 | `gamenight:game:gomoku:state` | Gomoku | see §6.9 |
+| `gamenight:game:wall-race:state` | Wall Race | see §6.10 |
 
 If you change a game's state shape incompatibly, either migrate it in `mount()`
 or rename the key (e.g. `state.v2`) so old saves don't crash the game.
@@ -644,6 +645,52 @@ who plays black alternates by round.
 The touch preview and keyboard position are UI-only. The line check is the same idea as Four Up's (`winningLine`). If
 a third game needs it, move it into a shared helper.
 
+### 6.10 Wall Race (`wall-race`)
+**An original design.** The user asked for Quoridor, which is a specific commercial game, so we don't recreate it.
+This race-and-block game was picked instead (2026-10-28). It first shipped locally as "Crumbling Walls" with walls that
+crumbled after 3 turns. The user then asked for permanent walls, so it became Wall Race with a wall budget, before
+it was ever pushed. Its own mechanics: single-segment walls, an adjustable budget, adjustable board size, no jumping,
+and pawns that block each other.
+
+**How it's played:** each player has one pawn, starting in the middle of opposite edges. Player 1 starts at the
+bottom and heads for the top row; player 2 does the reverse. On your turn, do one of these:
+- **Step** one square up, down, left or right. You can't go through a wall or onto the other pawn.
+- **Build** a wall segment in any open gap between two squares, if you have walls left.
+
+Walls are permanent for the round. Each player has the same **budget** (default 8). **A wall can never leave either
+player without a route home** (breadth-first search; pawns don't count as blocking a route). If your pawn has no legal
+step (boxed in by walls plus the other pawn), you can build or *Pass*. The first pawn to reach its finish row wins the
+round. Who acts first alternates by round.
+
+**UI**
+- Toolbar: round, win tally, **↶ Undo** (one level: undoes the latest action by either player, not after a win),
+  *New round* (asks first mid-game), *Reset scores*.
+- **Settings bar:** two steppers (`ui.stepper`): Board 5×5, 7×7 (default) or 9×9, and Walls 3–15 per player
+  (default 8). They can only be changed before the first action, then they're shown as read-only pills. Both carry over.
+- Player cards (⬆/⬇ shows which way each heads, plus "n walls left", red at 0). The current player's card is tinted.
+  The turn line changes to "no walls left, step…" or "boxed in: pass" when needed.
+- **Board:** a CSS grid with squares on even tracks and thin gaps on odd tracks (`--gaps` = size − 1). Finish rows are
+  tinted in their owner's soft colour. Squares the current player can step to glow. Pawns show the player's initial,
+  and the current one has a ring.
+- **Gaps** are buttons with extra tap area (`::before`). Hovering previews a wall in the current player's colour. Gaps
+  that would cut someone off are hatched and disabled. With no walls left, every gap is disabled (not hatched).
+- **Walls** are drawn in the builder's colour. Only the newest wall, or the pawn that just moved, plays the pop animation.
+
+**State** (`state` key)
+```js
+{
+  round: 1, wins: [0, 0], size: 7, budget: 8, first: 0 | 1, turn: 0 | 1,
+  pawns: [[r, c], [r, c]],                 // pawns[0] starts bottom-middle, pawns[1] top-middle
+  walls: [{ key: 'h-2-3' | 'v-4-1', owner }],  // h-r-c: below (r,c); v-r-c: right of (r,c)
+  moveNo: 0,                               // actions this round
+  last: null | { type: 'move' | 'wall' | 'pass', by },
+  undo: null | <state snapshot without undo>,
+  winner: null | 0 | 1
+}
+```
+Walls left = `budget` minus that player's walls, never stored. A save without a numeric `budget` (from before it
+existed) gets the default on mount; otherwise both Walls buttons would stay disabled.
+
 ---
 
 ## 7. Manual test checklist
@@ -713,6 +760,10 @@ There are no automated tests yet. Before you finish a change:
 - [ ] Rule variants: "exactly five" (six or more doesn't count), or opening restrictions to balance black's advantage.
 - [ ] Pinch/zoom or a larger 19×19 board for tablets.
 
+**Wall Race**
+- [ ] Optional rule: walls crumble after N turns (the original "Crumbling Walls" idea), as a toggle.
+- [ ] Show each player's shortest route length as a hint.
+
 **New game ideas** (brainstormed with the user 2026-10-19; ★ = the assistant's top picks)
 - [ ] ★ Categories: random letter + category + short countdown, first to answer taps to score.
 - [ ] ★ Would You Rather, "sync" mode: both secretly pick A/B, reveal together, score matches.
@@ -725,6 +776,7 @@ There are no automated tests yet. Before you finish a change:
 - [ ] Speed Tap reaction duel (false-start detection).
 - [ ] Simple tally / scoreboard for offline games.
 - [x] Clue-budget word game (user idea, 2026-10-26) → built as **Word Budget**.
+- [x] Wall-and-race game (user asked for Quoridor, 2026-10-28) → built as **Wall Race**, an original design (§6.10).
 - [ ] **Redacted** (user idea, 2026-10-26, parked): player 1 sees a trivia question (10 words or fewer) and its
       answer, and hides all but N words. Player 2 guesses the answer from what's left. Needs a vetted
       question bank (one clear answer, the answer not in the question, no single giveaway word) with
@@ -762,3 +814,4 @@ There are no automated tests yet. Before you finish a change:
 - **2026-10-28:** Added Four Up (four-in-a-row): ◀ / ▶ aim + Drop button under the board, a 1s falling-token animation, winning-line highlight.
 - **2026-10-28:** Added Dots & Boxes (3×3–6×6 grid via `ui.stepper`, closing a box claims it and gives another turn, most boxes wins).
 - **2026-10-28:** Added Gomoku (9×9–15×15, click to place on desktop, tap-preview + Place on touch, keyboard arrows). Added board/stone colour tokens to `base.css`.
+- **2026-10-28:** Added Wall Race (original race-and-block game: step or build a wall from a 3–15 budget, walls are permanent, no sealing anyone in, one-level Undo).

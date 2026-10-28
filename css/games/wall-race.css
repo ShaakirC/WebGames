@@ -1,0 +1,138 @@
+/* Wall Race: everything scoped under .game--wall-race.
+   Settings bar, stepper, banner and toolbar come from base.css. */
+
+.game--wall-race .wr-summary { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+
+.game--wall-race .wr {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+/* ---------- Players + turn ---------- */
+.game--wall-race .wr-players { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.game--wall-race .wr-player {
+  display: grid; gap: 2px;
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 5px solid var(--pc);
+  box-shadow: var(--shadow);
+}
+.game--wall-race .wr-player.is-turn { background: var(--pc-soft); border-color: var(--pc); }
+.game--wall-race .wr-player__name { font-weight: 800; color: var(--pc); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.game--wall-race .wr-player__walls { font-size: .85rem; font-weight: 650; color: var(--muted); }
+.game--wall-race .wr-player__walls.is-out { color: var(--no); }
+.game--wall-race .wr-turn { margin: 0; font-weight: 750; color: var(--pc); text-align: center; overflow-wrap: anywhere; }
+.game--wall-race .wr-rules { margin: 0; max-width: 460px; color: var(--muted); font-size: .88rem; text-align: center; }
+
+/* ---------- Board ----------
+   Squares sit on even tracks; the gaps between them (where walls go) are the thin odd tracks. */
+.game--wall-race .wr-board {
+  --gap: 12px;
+  --reach: 7px; /* extra tap area on each side of a gap */
+  display: grid;
+  grid-template-columns: repeat(var(--gaps), minmax(0, 1fr) var(--gap)) minmax(0, 1fr);
+  /* Same rhythm down the board: square rows size from their squares, gap rows are --gap tall like the gap columns. */
+  grid-template-rows: repeat(var(--gaps), auto var(--gap)) auto;
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.game--wall-race .wr-cell {
+  position: relative;
+  aspect-ratio: 1;
+  min-width: 0;
+  display: grid; place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: var(--surface-2);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+/* Finish rows: player 1 heads for the top row, player 2 for the bottom. Tinted directly (not via p1/p2)
+   so the step glow keeps the current player's colour. */
+.game--wall-race .wr-cell.is-goal-0 { background: var(--p1-soft); }
+.game--wall-race .wr-cell.is-goal-1 { background: var(--p2-soft); }
+.game--wall-race .wr-cell:disabled { cursor: default; }
+.game--wall-race .wr-cell.is-step {
+  cursor: pointer;
+  box-shadow: inset 0 0 0 3px var(--pc);
+  animation: wr-glow 1.2s ease-in-out infinite alternate;
+}
+.game--wall-race .wr-cell.is-step:hover { background: color-mix(in srgb, var(--pc) 25%, var(--surface-2)); }
+.game--wall-race .wr-cell:focus-visible,
+.game--wall-race .wr-gap:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; z-index: 3; }
+@keyframes wr-glow {
+  from { box-shadow: inset 0 0 0 2px var(--pc); }
+  to { box-shadow: inset 0 0 0 4px var(--pc); }
+}
+
+.game--wall-race .wr-pawn {
+  width: 72%; aspect-ratio: 1;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--pc);
+  color: var(--surface);
+  font-weight: 900; font-size: clamp(.9rem, 4vw, 1.3rem);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .25);
+}
+.game--wall-race .wr-pawn.is-new { animation: pop .25s ease; }
+.game--wall-race .wr-pawn.is-turn { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--pc); }
+.game--wall-race .wr-pawn.is-win { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--accent); }
+
+/* Empty gap: a button you can tap to build. ::before widens the tap area, ::after previews the wall. */
+.game--wall-race .wr-gap {
+  position: relative;
+  z-index: 1;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.game--wall-race .wr-gap::before { content: ''; position: absolute; }
+.game--wall-race .wr-gap--v::before { inset: 0 calc(-1 * var(--reach)); }
+.game--wall-race .wr-gap--h::before { inset: calc(-1 * var(--reach)) 0; }
+.game--wall-race .wr-gap::after {
+  content: '';
+  position: absolute;
+  inset: 2px 3px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background-color .12s ease;
+}
+.game--wall-race .wr-gap--h::after { inset: 3px 2px; }
+.game--wall-race .wr-gap:not(:disabled):hover::after,
+.game--wall-race .wr-gap:not(:disabled):focus-visible::after { background: color-mix(in srgb, var(--pc) 50%, transparent); }
+.game--wall-race .wr-gap:disabled { cursor: not-allowed; }
+.game--wall-race .wr-gap.is-blocked::after {
+  background: repeating-linear-gradient(45deg, var(--border) 0 3px, transparent 3px 6px);
+  opacity: .7;
+}
+
+/* Built wall, in its builder's colour. Only the newest one pops in. */
+.game--wall-race .wr-wall {
+  position: relative;
+  z-index: 2;
+  margin: -3px;
+  border-radius: 4px;
+  background: var(--pc);
+}
+.game--wall-race .wr-wall.is-new { animation: pop .25s ease; }
+
+.game--wall-race .wr-post { border-radius: 2px; background: var(--border); margin: 3px; }
+
+@media (max-width: 420px) {
+  .game--wall-race .wr-board { --gap: 10px; --reach: 6px; padding: 8px; }
+}
