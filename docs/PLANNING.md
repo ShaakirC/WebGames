@@ -499,6 +499,10 @@ At 8×8 the cells drop to about 36px on a 360px phone, a bit under the usual 40p
    per player's waters. Only the board being fired at is tappable, and it's ringed in the accent colour (and moved
    to the top on phones). Misses show •, hits 💥, and sunk ships get a red outline over their cells. Each board
    shows "n / N afloat", the fleet's ship lengths (sunk ones faded) and "hits from shots".
+   - **👁 Hold to peek (Y, look away):** under each board. While its owner holds it (mouse, touch, or Space/Enter),
+     their unsunk ships show on their own board with a dashed outline. Releasing, sliding off or losing focus hides
+     them again. It only toggles a CSS class (`.is-peeking`), so nothing is saved or redrawn. The long-press menu on
+     phones is suppressed. The button goes away once every ship is sunk, or when the round ends.
 5. **Done:** a banner "🏆 X sank Y's whole fleet in N shots!" with *Next round*. Unsunk ships are revealed with
    a dashed outline. The win tally carries over between rounds.
 
@@ -574,7 +578,7 @@ There are no automated tests yet. Before you finish a change:
 - [ ] Option to skip or swap a word for a clue penalty (currently the list is fixed by design).
 
 **Ship Sinker**
-- [ ] Optional "hold to peek" at your own fleet during battle.
+- [x] "Hold to peek" at your own fleet during battle.
 - [ ] Ship-shaped variety (e.g. an L-shaped piece) on bigger boards.
 - [ ] Rule toggle: strict alternating turns instead of "hit → shoot again".
 
@@ -623,3 +627,4 @@ There are no automated tests yet. Before you finish a change:
 - **2026-10-28:** Refactor: added `ui.stepper` and `.stepper` CSS for − / + settings. 20 Questions, Word Budget and
   Ship Sinker now use it and their own stepper CSS is gone. No visible change.
 - **2026-10-28:** Refactor: Chain Link and Word Budget gates now use `ui.gate`. Their own gate CSS is gone. No visible change.
+- **2026-10-28:** Ship Sinker: added "👁 Hold to peek" under each board to see your own hidden ships during battle.

@@ -53,6 +53,9 @@
   animation: pop .35s ease;
 }
 .game--ship-sinker .ss-ship.is-ghost { border-style: dashed; background: color-mix(in srgb, var(--pc) 15%, transparent); }
+/* Unsunk ships during battle: only visible while the owner holds Peek. */
+.game--ship-sinker .ss-ship.is-peek { display: none; border-style: dashed; background: color-mix(in srgb, var(--pc) 30%, transparent); }
+.game--ship-sinker .ss-board.is-peeking .ss-ship.is-peek { display: block; }
 
 /* ---------- Placement ---------- */
 .game--ship-sinker .ss-place {
@@ -91,6 +94,16 @@
 .game--ship-sinker .ss-waters.is-target { box-shadow: 0 0 0 3px var(--accent), var(--shadow); }
 .game--ship-sinker .ss-fleet { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .game--ship-sinker .ss-fleet__ship.is-sunk .ss-blocks i { background: var(--no); opacity: .4; }
+.game--ship-sinker .ss-peek {
+  justify-self: center;
+  max-width: 100%;
+  white-space: normal;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+.game--ship-sinker .ss-peek:active { background: var(--pc-soft); border-color: var(--pc); }
 .game--ship-sinker .ss-waters__stats { margin: 0; text-align: center; color: var(--muted); font-weight: 650; font-size: .9rem; }
 
 /* Phones: the board being fired at goes on top, and boards get as much width as possible. */

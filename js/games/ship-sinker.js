@@ -20,6 +20,7 @@
   };
   const COLS = 'ABCDEFGH';
 
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
   const cellKey = (r, c) => `${r},${c}`;
   const cellName = (r, c) => `${COLS[c]}${r + 1}`;
 
@@ -386,8 +387,9 @@
         const isTarget = state.phase === 'play' && state.turn !== owner;
         const done = state.phase === 'done';
         const afloat = fleet.filter((s) => !isSunk(s, shots)).length;
-        // Sunk ships are always shown; the rest only once the round is over.
+        // Sunk ships are always shown; the rest only once the round is over, or while the owner holds Peek.
         const shown = fleet.filter((s) => done || isSunk(s, shots));
+        const hidden = done ? [] : fleet.filter((s) => !isSunk(s, shots));
 
         return h('section', { class: `player-col ss-waters ${p.cssClass}` + (isTarget ? ' is-target' : '') },
           h('header', { class: 'player-col__head' },
@@ -398,6 +400,7 @@
             h('span', { class: 'counter' + (afloat === 0 ? ' counter--max' : '') }, `${afloat} / ${fleet.length} afloat`)),
           renderBoard({
             ships: shown,
+            peekShips: hidden,
             shots,
             fleet,
             prefix: `w${owner}`,
@@ -407,11 +410,41 @@
           h('div', { class: 'ss-fleet', 'aria-label': 'Ships' },
             fleet.map((s) => h('span', { class: 'ss-fleet__ship' + (isSunk(s, shots) ? ' is-sunk' : '') }, blocks(s.len)))),
           h('p', { class: 'ss-waters__stats' },
-            `${hitsOn(fleet, shots)} hits from ${shots.length} shots`));
+            `${plural(hitsOn(fleet, shots), 'hit')} from ${plural(shots.length, 'shot')}`),
+          hidden.length > 0 && peekButton(owner));
+      }
+
+      // Hold to show the owner's hidden ships on their own board. Release (or slide off) hides them again.
+      // Only toggles a class, so nothing is saved or redrawn.
+      function peekButton(owner) {
+        const me = ctx.players[owner];
+        const other = ctx.players[1 - owner];
+        let board = null;
+        const show = (e) => {
+          e.preventDefault();
+          board = e.currentTarget.closest('.ss-waters').querySelector('.ss-board');
+          board.classList.add('is-peeking');
+        };
+        const hide = () => { if (board) board.classList.remove('is-peeking'); };
+        const isHoldKey = (e) => e.key === ' ' || e.key === 'Enter';
+        return h('button', {
+          class: 'btn btn--sm ss-peek',
+          type: 'button',
+          title: `${other.name}, look away while ${me.name} peeks`,
+          'aria-label': `Hold to peek at ${me.name}’s fleet`,
+          onpointerdown: show,
+          onpointerup: hide,
+          onpointerleave: hide,
+          onpointercancel: hide,
+          onblur: hide,
+          oncontextmenu: (e) => e.preventDefault(), // long-press on phones shouldn't open a menu
+          onkeydown: (e) => { if (isHoldKey(e) && !e.repeat) show(e); },
+          onkeyup: (e) => { if (isHoldKey(e)) hide(); },
+        }, `👁 Hold to peek (${other.name}, look away)`);
       }
 
       // One grid. Cells are buttons placed explicitly; ships are overlays spanning their cells.
-      function renderBoard({ ships, shots = [], fleet = [], prefix, onCell, onHover, label }) {
+      function renderBoard({ ships, peekShips = [], shots = [], fleet = [], prefix, onCell, onHover, label }) {
         const n = state.size;
         const cells = [];
         for (let r = 0; r < n; r++) {
@@ -432,13 +465,17 @@
             }, shot ? (hit ? '💥' : '•') : ''));
           }
         }
-        const overlays = ships.map((s) => h('div', {
-          class: 'ss-ship' + (shots.length > 0 && isSunk(s, shots) ? ' is-sunk' : '') +
-            (state.phase === 'done' && !isSunk(s, shots) ? ' is-ghost' : ''),
+        const overlay = (s, extra) => h('div', {
+          class: 'ss-ship' + extra,
           style: `grid-row:${s.r + 1} / span ${s.dir === 'v' ? s.len : 1};` +
             `grid-column:${s.c + 1} / span ${s.dir === 'h' ? s.len : 1}`,
           'aria-hidden': 'true',
-        }));
+        });
+        const overlays = [
+          ships.map((s) => overlay(s, (shots.length > 0 && isSunk(s, shots) ? ' is-sunk' : '') +
+            (state.phase === 'done' && !isSunk(s, shots) ? ' is-ghost' : ''))),
+          peekShips.map((s) => overlay(s, ' is-peek')), // hidden until the board gets .is-peeking
+        ];
         return h('div', {
           class: 'ss-board' + (onCell ? ' is-live' : ''),
           style: `--n:${n}`,
