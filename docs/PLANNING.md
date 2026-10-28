@@ -200,12 +200,14 @@ All keys are prefixed `gamenight:`.
 | `gamenight:game:ship-sinker:state` | Ship Sinker | see §6.6 |
 | `gamenight:game:four-up:state` | Four Up | see §6.7 |
 | `gamenight:game:dots-and-boxes:state` | Dots & Boxes | see §6.8 |
+| `gamenight:game:gomoku:state` | Gomoku | see §6.9 |
 
 If you change a game's state shape incompatibly, either migrate it in `mount()`
 or rename the key (e.g. `state.v2`) so old saves don't crash the game.
 
 ### 4.8 Styling
 - Colours come from tokens on `:root`. Never hard-code hex values in game CSS. Add a token if you need one.
+  Game-specific tokens so far: `--board-wood`, `--board-line`, `--stone-black` and `--stone-white` (Gomoku).
 - **Theme:** the top-bar ☀️/🌙 button sets `<html data-theme="light|dark">` and saves it.
   With no saved choice, the OS setting applies. The dark tokens exist **twice** in `base.css`:
   once under `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) }` and once
@@ -602,6 +604,46 @@ even number of boxes a tie is possible (a draw, which doesn't change the tally).
 ```
 Scores are counted from `boxes`, never stored.
 
+### 6.9 Gomoku (`gomoku`)
+**How it's played:** players take turns placing black and white stones on the points (intersections) of a grid.
+The first to get **five or more** in an unbroken line, across, down or diagonally, wins. Nothing moves or is
+captured. A full board with no line is a draw, which doesn't change the tally. Black goes first, and the player
+who plays black alternates by round.
+
+**UI**
+- Toolbar: round, win tally, *New round* (asks first if a game is in progress), *Reset scores*.
+- **Settings bar:** a Board stepper (`ui.stepper`) through 9×9, 11×11, 13×13 and 15×15 (the default and traditional
+  size). It can only be changed before the first stone, then it's shown as a read-only pill. The size carries over.
+- **Player cards** with each player's stone colour. The current player's card is tinted. On phones the "BLACK/WHITE"
+  word is hidden (the stone icon shows it). Under them is the turn line.
+- **Board:** one `<button>` per point in a CSS grid on a wood background. `::before`/`::after` draw the lines through
+  each point's centre, cut short on the edges (`is-t/b/l/r`). Star points are marked: four near the corners plus the centre.
+  The latest stone has a small dot in the opposite colour, and only a newly placed stone plays the pop animation.
+  The winning stones get an accent ring.
+- **Placing depends on the device** (`(hover: hover) and (pointer: fine)`):
+  - **Mouse:** click a point to place. Hovering shows a faint preview stone.
+  - **Touch:** points are only about 22px on a phone at 15×15, so the first tap shows a dashed preview stone and
+    a big **Place at J8** button. Tap the same point again or press the button to place it. Tapping another point
+    moves the preview.
+- **Keyboard:** the board is a single tab stop (roving `tabindex`). Arrow keys move around and Enter/Space places
+  (on touch devices Enter previews first, like a tap).
+- Points are named like board notation: columns A–P skipping I, rows numbered from the bottom.
+
+**State** (`state` key)
+```js
+{
+  round: 1, wins: [0, 0], size: 15,
+  first: 0 | 1,                 // plays black; alternates each round
+  turn: 0 | 1,
+  board: [[null | 0 | 1, …n], …n],   // board[r][c] = player index (colour comes from `first`)
+  moves: 0, last: [r, c] | null,
+  winner: null | 0 | 1 | 'draw',
+  line: [[r, c], …]             // winning stones
+}
+```
+The touch preview and keyboard position are UI-only. The line check is the same idea as Four Up's (`winningLine`). If
+a third game needs it, move it into a shared helper.
+
 ---
 
 ## 7. Manual test checklist
@@ -666,6 +708,11 @@ There are no automated tests yet. Before you finish a change:
 - [ ] Undo last line.
 - [ ] Rectangular grids (e.g. 5×3) and bigger boards for tablets.
 
+**Gomoku**
+- [ ] Undo last stone.
+- [ ] Rule variants: "exactly five" (six or more doesn't count), or opening restrictions to balance black's advantage.
+- [ ] Pinch/zoom or a larger 19×19 board for tablets.
+
 **New game ideas** (brainstormed with the user 2026-10-19; ★ = the assistant's top picks)
 - [ ] ★ Categories: random letter + category + short countdown, first to answer taps to score.
 - [ ] ★ Would You Rather, "sync" mode: both secretly pick A/B, reveal together, score matches.
@@ -714,3 +761,4 @@ There are no automated tests yet. Before you finish a change:
 - **2026-10-28:** Ship Sinker: added "👁 Hold to peek" under each board to see your own hidden ships during battle.
 - **2026-10-28:** Added Four Up (four-in-a-row): ◀ / ▶ aim + Drop button under the board, a 1s falling-token animation, winning-line highlight.
 - **2026-10-28:** Added Dots & Boxes (3×3–6×6 grid via `ui.stepper`, closing a box claims it and gives another turn, most boxes wins).
+- **2026-10-28:** Added Gomoku (9×9–15×15, click to place on desktop, tap-preview + Place on touch, keyboard arrows). Added board/stone colour tokens to `base.css`.

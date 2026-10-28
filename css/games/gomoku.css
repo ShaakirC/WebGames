@@ -1,0 +1,119 @@
+/* Gomoku: everything scoped under .game--gomoku.
+   Settings bar, stepper, banner and toolbar come from base.css. Board and stone colours are tokens there too. */
+
+.game--gomoku .banner.is-draw { --pc: var(--accent); --pc-soft: var(--accent-soft); }
+.game--gomoku .gm-summary { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+
+.game--gomoku .gm {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ---------- Players + turn ---------- */
+.game--gomoku .gm-players { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.game--gomoku .gm-player {
+  display: flex; align-items: center; gap: 8px;
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 5px solid var(--pc);
+  box-shadow: var(--shadow);
+}
+.game--gomoku .gm-player.is-turn { background: var(--pc-soft); border-color: var(--pc); }
+.game--gomoku .gm-player__stone { flex: none; width: 22px; height: 22px; border-radius: 50%; }
+.game--gomoku .gm-player__name { flex: 1; min-width: 0; font-weight: 800; color: var(--pc); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.game--gomoku .gm-player__colour { font-size: .8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.game--gomoku .gm-turn { margin: 0; font-weight: 750; color: var(--pc); text-align: center; overflow-wrap: anywhere; }
+
+/* ---------- Board ----------
+   One button per point. ::before / ::after draw the lines through its centre, cut short on the edges. */
+.game--gomoku .gm-board {
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  width: 100%;
+  padding: 3%;
+  border-radius: var(--radius-sm);
+  background: var(--board-wood);
+  box-shadow: var(--shadow), inset 0 0 0 1px color-mix(in srgb, var(--board-line) 30%, transparent);
+}
+.game--gomoku .gm-pt {
+  position: relative;
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.game--gomoku .gm-pt:disabled,
+.game--gomoku .gm-pt.is-taken { cursor: default; }
+.game--gomoku .gm-pt::before,
+.game--gomoku .gm-pt::after { content: ''; position: absolute; background: var(--board-line); pointer-events: none; }
+.game--gomoku .gm-pt::before { top: 50%; left: 0; right: 0; height: 1px; }
+.game--gomoku .gm-pt::after { left: 50%; top: 0; bottom: 0; width: 1px; }
+.game--gomoku .gm-pt.is-l::before { left: 50%; }
+.game--gomoku .gm-pt.is-r::before { right: 50%; }
+.game--gomoku .gm-pt.is-t::after { top: 50%; }
+.game--gomoku .gm-pt.is-b::after { bottom: 50%; }
+.game--gomoku .gm-pt:focus-visible { outline: 3px solid var(--accent); outline-offset: -2px; border-radius: 50%; z-index: 2; }
+
+.game--gomoku .gm-star {
+  position: absolute;
+  z-index: 1;
+  left: 50%; top: 50%;
+  width: 22%; aspect-ratio: 1;
+  max-width: 7px;
+  border-radius: 50%;
+  background: var(--board-line);
+  transform: translate(-50%, -50%);
+}
+
+/* ---------- Stones ---------- */
+.game--gomoku .gm-stone {
+  position: absolute;
+  z-index: 1;
+  inset: 6%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.game--gomoku .is-black {
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, white 28%, var(--stone-black)), var(--stone-black) 60%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .45);
+}
+.game--gomoku .is-white {
+  background: radial-gradient(circle at 35% 30%, var(--stone-white), color-mix(in srgb, black 14%, var(--stone-white)) 85%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(0, 0, 0, .12);
+}
+.game--gomoku .gm-stone.is-new { animation: pop .2s ease; }
+
+/* Latest stone: a small dot in the opposite colour. */
+.game--gomoku .gm-stone.is-last::after {
+  content: '';
+  position: absolute;
+  inset: 36%;
+  border-radius: 50%;
+}
+.game--gomoku .gm-stone.is-black.is-last::after { background: var(--stone-white); }
+.game--gomoku .gm-stone.is-white.is-last::after { background: var(--stone-black); }
+.game--gomoku .gm-stone.is-win { box-shadow: 0 0 0 2px var(--board-wood), 0 0 0 4px var(--accent); }
+
+/* Preview stones: shown on hover (mouse) or as the pending tap (touch). */
+.game--gomoku .gm-stone.is-ghost { display: none; opacity: .5; box-shadow: none; }
+.game--gomoku .gm-stone.is-ghost.is-pending { display: block; opacity: .7; outline: 2px dashed var(--accent); outline-offset: 2px; }
+@media (hover: hover) {
+  .game--gomoku .gm-board.is-direct .gm-pt:not(:disabled):hover .gm-stone.is-ghost { display: block; }
+}
+
+.game--gomoku .gm-place { width: 100%; max-width: 320px; }
+
+/* Phones: the stone icon already shows the colour, so give the name the room. */
+@media (max-width: 420px) {
+  .game--gomoku .gm-player__colour { display: none; }
+}

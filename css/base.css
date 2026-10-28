@@ -31,6 +31,12 @@
   --maybe: #b8730a;
   --maybe-soft: #fbedd3;
 
+  /* Gomoku board + stones (stones stay physical black/white in both themes) */
+  --board-wood: #e2b56c;
+  --board-line: #6a4a1c;
+  --stone-black: #1f1d22;
+  --stone-white: #f8f6f1;
+
   --radius: 14px;
   --radius-sm: 9px;
   --shadow: 0 1px 2px rgba(30, 25, 15, .06), 0 4px 14px rgba(30, 25, 15, .06);
@@ -64,6 +70,11 @@
     --maybe: #f0b54c;
     --maybe-soft: #42341b;
 
+    --board-wood: #9a7440;
+    --board-line: #2b1f0e;
+    --stone-black: #121114;
+    --stone-white: #ece9e2;
+
     --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 14px rgba(0, 0, 0, .25);
   }
 }
@@ -91,6 +102,11 @@
   --no-soft: #432222;
   --maybe: #f0b54c;
   --maybe-soft: #42341b;
+
+  --board-wood: #9a7440;
+  --board-line: #2b1f0e;
+  --stone-black: #121114;
+  --stone-white: #ece9e2;
 
   --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 14px rgba(0, 0, 0, .25);
 }
