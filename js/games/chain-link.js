@@ -276,11 +276,12 @@
         const other = players[1 - state.builder];
 
         if (state.gate) {
-          return h('div', { class: `card cl-gate ${me.cssClass}` },
-            h('div', { class: 'cl-gate__emoji', 'aria-hidden': 'true' }, '🙈'),
-            h('h2', { class: 'cl-gate__title' }, `${me.name}, build a chain for ${other.name}`),
-            h('p', { class: 'cl-gate__text' }, `${other.name}, look away!`),
-            state.builder === 0 && h('div', { class: 'cl-length' },
+          return ui.gate({
+            player: me,
+            emoji: '🙈',
+            title: `${me.name}, build a chain for ${other.name}`,
+            text: `${other.name}, look away!`,
+            body: state.builder === 0 && h('div', { class: 'cl-length' },
               h('span', { class: 'cl-length__label' }, 'Words per chain'),
               LENGTHS.map((n) =>
                 h('button', {
@@ -289,8 +290,9 @@
                 }, n)
               )
             ),
-            h('button', { class: 'btn btn--primary btn--xl', onclick: startBuilding }, `I’m ${me.name}, let’s go`)
-          );
+            actionLabel: `I’m ${me.name}, let’s go`,
+            onAction: startBuilding,
+          });
         }
 
         const rows = [];
@@ -393,15 +395,16 @@
           : null;
 
         if (!board.startedAt) {
-          return h('div', { class: `card cl-gate ${me.cssClass}` },
-            h('div', { class: 'cl-gate__emoji', 'aria-hidden': 'true' }, '⏱️'),
-            h('h2', { class: 'cl-gate__title' }, `${me.name}, you’re up!`),
-            h('p', { class: 'cl-gate__text' },
-              `Solve ${setter.name}’s ${chainFor(i).length}-word chain as fast as you can. ` +
-              `Each 💡 hint adds ${HINT_PENALTY_MS / 1000} seconds.`),
-            toBeat,
-            h('button', { class: 'btn btn--primary btn--xl', onclick: startSolving }, 'Start the clock')
-          );
+          return ui.gate({
+            player: me,
+            emoji: '⏱️',
+            title: `${me.name}, you’re up!`,
+            text: `Solve ${setter.name}’s ${chainFor(i).length}-word chain as fast as you can. ` +
+              `Each 💡 hint adds ${HINT_PENALTY_MS / 1000} seconds.`,
+            body: toBeat,
+            actionLabel: 'Start the clock',
+            onAction: startSolving,
+          });
         }
 
         return h('div', { class: 'cl-solo' },

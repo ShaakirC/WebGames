@@ -1,18 +1,9 @@
 /* 20 Questions: everything scoped under .game--twenty-questions.
    Settings bar, player columns, counters and the secret panel come from base.css. */
 
-/* Question-limit stepper inside the settings bar */
-.game--twenty-questions .tq-limit { flex: none; display: flex; align-items: center; gap: 6px; }
-.game--twenty-questions .tq-limit .settings-bar__label { margin-right: 4px; }
-.game--twenty-questions .tq-step { width: 38px; padding: 0; font-size: 1.15rem; }
-.game--twenty-questions .tq-step--inf { margin-left: 4px; }
-.game--twenty-questions .tq-step.is-active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
-.game--twenty-questions .tq-limit__value {
-  min-width: 2.2ch;
-  text-align: center;
-  font-size: 1.25rem; font-weight: 850;
-  font-variant-numeric: tabular-nums;
-}
+/* ∞ toggle after the question-limit stepper (the stepper itself comes from base.css) */
+.game--twenty-questions .tq-inf { margin-left: 4px; }
+.game--twenty-questions .tq-inf.is-active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 
 /* Question log */
 .game--twenty-questions .qlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }

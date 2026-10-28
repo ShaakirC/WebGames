@@ -9,7 +9,7 @@
  *   4. Add a section for it under "Games" in docs/PLANNING.md.
  *
  * Shared building blocks (js/core/ui.js, styled in css/base.css):
- *   ui.renderInto, ui.toolbar, ui.confirmFreshMatch, ui.secretPanel, ui.inlineEditor,
+ *   ui.renderInto, ui.toolbar, ui.confirmFreshMatch, ui.secretPanel, ui.stepper, ui.gate, ui.inlineEditor,
  *   ui.focus, ui.shake, plus CSS: .settings-bar, .player-columns / .player-col, .counter, .banner
  */
 (function () {

@@ -3,34 +3,12 @@
 
 .game--word-budget .banner.is-draw { --pc: var(--accent); --pc-soft: var(--accent-soft); }
 
-/* ---------- Settings ---------- */
-.game--word-budget .wb-step { flex: none; display: flex; align-items: center; gap: 6px; }
-.game--word-budget .wb-step .settings-bar__label { margin-right: 4px; }
-.game--word-budget .wb-step__btn { width: 38px; padding: 0; font-size: 1.15rem; }
-.game--word-budget .wb-step__value {
-  min-width: 2.6ch;
-  text-align: center;
-  font-size: 1.25rem; font-weight: 850;
-  font-variant-numeric: tabular-nums;
-}
+/* ---------- Settings (the steppers come from base.css) ---------- */
 .game--word-budget .wb-types { display: flex; flex-wrap: wrap; gap: 6px; }
 .game--word-budget .wb-type.is-active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 .game--word-budget .wb-summary { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
 
-/* ---------- Gate (look-away screen) ---------- */
-.game--word-budget .wb-gate {
-  display: grid;
-  justify-items: center;
-  gap: 14px;
-  max-width: 560px;
-  margin: 8px auto 0;
-  padding: 32px 20px;
-  text-align: center;
-  border-top: 5px solid var(--pc);
-}
-.game--word-budget .wb-gate__emoji { font-size: 3.5rem; line-height: 1; }
-.game--word-budget .wb-gate__title { font-size: 1.5rem; font-weight: 850; color: var(--pc); }
-.game--word-budget .wb-gate__text { margin: 0; color: var(--muted); font-size: 1.1rem; }
+/* ---------- Gate (look-away screen; the card comes from base.css) ---------- */
 .game--word-budget .wb-gate__beat {
   margin: 0;
   padding: 6px 14px;

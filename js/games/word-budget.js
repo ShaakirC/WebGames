@@ -268,12 +268,11 @@
       }
 
       function stepper(label, value, onMinus, onPlus, canMinus, canPlus) {
-        return h('div', { class: 'wb-step', role: 'group', 'aria-label': label },
-          h('span', { class: 'settings-bar__label' }, label),
-          h('button', { class: 'btn btn--sm wb-step__btn', 'aria-label': `Fewer ${label.toLowerCase()}`, disabled: !canMinus, onclick: onMinus }, '−'),
-          h('span', { class: 'wb-step__value', 'aria-live': 'polite' }, value),
-          h('button', { class: 'btn btn--sm wb-step__btn', 'aria-label': `More ${label.toLowerCase()}`, disabled: !canPlus, onclick: onPlus }, '+')
-        );
+        return ui.stepper({
+          label, value, onMinus, onPlus, canMinus, canPlus,
+          minusLabel: `Fewer ${label.toLowerCase()}`,
+          plusLabel: `More ${label.toLowerCase()}`,
+        });
       }
 
       // Editable before the round's first turn; a read-only summary after that, so both turns match.
@@ -313,17 +312,22 @@
         const other = players[1 - state.giver];
         const done = state.turns[1 - state.giver];
         const s = settings();
-        return h('div', { class: `card wb-gate ${me.cssClass}` },
-          h('div', { class: 'wb-gate__emoji', 'aria-hidden': 'true' }, '🙉'),
-          h('h2', { class: 'wb-gate__title' }, `${me.name}, you’re giving clues`),
-          h('p', { class: 'wb-gate__text' }, `${other.name}, turn around. No looking at the screen!`),
-          done && h('p', { class: 'wb-gate__beat' },
-            `To beat: ${other.name} got ${wordsGot(done)} / ${done.cards.length} with ${cluesUsed(done)} clues.`),
-          h('ul', { class: 'wb-rules' },
-            h('li', null, `Get ${other.name} to say all ${s.words} words using ${s.clues} clue words or fewer.`),
-            h('li', null, 'Every word you say counts: “Destiny’s Child” is 2 clues. Tap +1 for each one.'),
-            h('li', null, 'No part of the word itself, no gestures, no “sounds like”. Guesses are free.')),
-          h('button', { class: 'btn btn--primary btn--xl', onclick: startTurn }, 'Deal my words'));
+        return ui.gate({
+          player: me,
+          emoji: '🙉',
+          title: `${me.name}, you’re giving clues`,
+          text: `${other.name}, turn around. No looking at the screen!`,
+          body: [
+            done && h('p', { class: 'wb-gate__beat' },
+              `To beat: ${other.name} got ${wordsGot(done)} / ${done.cards.length} with ${cluesUsed(done)} clues.`),
+            h('ul', { class: 'wb-rules' },
+              h('li', null, `Get ${other.name} to say all ${s.words} words using ${s.clues} clue words or fewer.`),
+              h('li', null, 'Every word you say counts: “Destiny’s Child” is 2 clues. Tap +1 for each one.'),
+              h('li', null, 'No part of the word itself, no gestures, no “sounds like”. Guesses are free.')),
+          ],
+          actionLabel: 'Deal my words',
+          onAction: startTurn,
+        });
       }
 
       function renderPlay() {

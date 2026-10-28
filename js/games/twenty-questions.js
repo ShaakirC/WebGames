@@ -199,28 +199,23 @@
               oninput: (e) => { state.category = e.target.value; save(); },
             })
           ),
-          h('div', { class: 'tq-limit', role: 'group', 'aria-label': 'Questions per player' },
-            h('span', { class: 'settings-bar__label' }, 'Questions'),
-            h('button', {
-              class: 'btn btn--sm tq-step',
-              'aria-label': `${LIMIT_STEP} fewer questions`,
-              disabled: !unlimited && limit <= LIMIT_MIN,
-              onclick: () => stepLimit(-LIMIT_STEP),
-            }, '−'),
-            h('span', { class: 'tq-limit__value', 'aria-live': 'polite' }, unlimited ? '∞' : limit),
-            h('button', {
-              class: 'btn btn--sm tq-step',
-              'aria-label': `${LIMIT_STEP} more questions`,
-              disabled: !unlimited && limit >= LIMIT_MAX,
-              onclick: () => stepLimit(LIMIT_STEP),
-            }, '+'),
-            h('button', {
-              class: 'btn btn--sm tq-step tq-step--inf' + (unlimited ? ' is-active' : ''),
+          ui.stepper({
+            label: 'Questions',
+            groupLabel: 'Questions per player',
+            value: unlimited ? '∞' : limit,
+            onMinus: () => stepLimit(-LIMIT_STEP),
+            onPlus: () => stepLimit(LIMIT_STEP),
+            canMinus: unlimited || limit > LIMIT_MIN,
+            canPlus: unlimited || limit < LIMIT_MAX,
+            minusLabel: `${LIMIT_STEP} fewer questions`,
+            plusLabel: `${LIMIT_STEP} more questions`,
+            extra: h('button', {
+              class: 'btn btn--sm stepper__btn tq-inf' + (unlimited ? ' is-active' : ''),
               title: unlimited ? 'Back to a question limit' : 'Unlimited questions',
               'aria-pressed': String(unlimited),
               onclick: toggleUnlimited,
-            }, '∞')
-          )
+            }, '∞'),
+          })
         );
       }
 

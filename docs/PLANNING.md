@@ -172,12 +172,16 @@ Use these instead of rebuilding them. Their styles are in `css/base.css`. Use th
 | `ui.toolbar({ round, wins, players, actions, onNewRound, onResetScores })` | The standard top bar: "Round N" pill, win chips, any extra `actions` nodes, *New round*, *Reset scores*. Leave out a field to hide that part. |
 | `ui.confirmFreshMatch()` | The standard "fresh match" confirm. On yes, set `wins = [0,0]` and `round = 1`. |
 | `ui.secretPanel({ side, focusKey, placeholder, inputmode, label, lockedText, revealedLabel, onInput, onLock, onReveal, onChange })` | Hidden-entry → locked → revealed panel. `side` needs `{ secret, locked, revealed }`. Pass `onChange: null` to hide *Change*. Put `p1`/`p2` on an ancestor for colours. |
+| `ui.stepper({ label, groupLabel, value, onMinus, onPlus, canMinus, canPlus, minusLabel, plusLabel, extra })` | The settings-bar "LABEL [−] value [+]" control. `canMinus`/`canPlus: false` disables a button. `minusLabel`/`plusLabel` are the aria-labels (default "Decrease/Increase <label>"), and `groupLabel` overrides the group's aria-label. `extra` nodes go after + (20 Questions' ∞ toggle; give such buttons `stepper__btn`). The game keeps the value and its limits; the helper only draws. Used by 20 Questions, Word Budget and Ship Sinker. |
+| `ui.gate({ player, emoji, title, text, body, actionLabel, onAction })` | The "look away" card shown before one player's private screen: a centred card in `player`'s colour with a big emoji, title, muted text, optional `body` nodes (settings, rules…) and a `.btn--xl` action. Used by Chain Link (builder and solver gates), Word Budget and Ship Sinker. |
 | `ui.inlineEditor({ root, getText, save, renderRow, render })` | Edits list rows in place, one at a time, keyed by a string like `"0:3"`. In the row renderer: `if (editor.isEditing(key)) return h('li', { 'data-editing-row': true, … }, editor.field('Edit note'))`. Start with `editor.start(key)`. `save(key, text)` returns `true` when a full redraw is needed (e.g. it deleted the row). Otherwise only that row is swapped, so the click that caused the blur still lands. Call `editor.reset()` on a new round. |
 
 **Shared CSS classes** (in `base.css`):
 - **Settings bar:** `.settings-bar` with `.settings-bar__field`, `__label` and `__input`.
+- **Stepper:** `.stepper` with `__label`, `__btn` and `__value` (rendered by `ui.stepper`).
 - **Two player cards:** `.player-columns` containing `.player-col` cards, with `__head`, `__name` and `__sub`.
 - **Counter pill:** `.counter`, with `.counter--max` for when it's at its limit.
+- **Gate:** `.gate` with `__emoji`, `__title` and `__text` (rendered by `ui.gate`).
 - **Others:** `.banner`, `.toolbar`, `.pill`, `.score-chip`, `.card`, `.empty`, `.field`.
 
 ### 4.7 Storage keys
@@ -193,6 +197,7 @@ All keys are prefixed `gamenight:`.
 | `gamenight:game:mystery-number:state` | Mystery Number | see §6.4 |
 | `gamenight:game:word-budget:state` | Word Budget | see §6.5 |
 | `gamenight:game:word-budget:seen` | Word Budget | every word dealt so far (lowercase). Kept across rounds and score resets so words don't repeat |
+| `gamenight:game:ship-sinker:state` | Ship Sinker | see §6.6 |
 
 If you change a game's state shape incompatibly, either migrate it in `mount()`
 or rename the key (e.g. `state.v2`) so old saves don't crash the game.
@@ -462,6 +467,62 @@ Duplicates (ignoring case) are dropped across all lists, keeping the first.
 **Known limitations:** the clue count relies on the clue-giver tapping honestly. A refresh mid-turn keeps the
 board (the guesser isn't looking), and the timer keeps running through it.
 
+### 6.6 Ship Sinker (`ship-sinker`)
+**How it's played:** a mini version of the classic grid battle game. Each player secretly places a small fleet, then
+they take turns firing at each other's waters. **A hit (or a sink) means you shoot again; a miss passes the turn.**
+Sinking a ship reveals its whole outline. The first to sink the entire enemy fleet wins the round.
+
+**Board sizes and fleets** (`FLEETS` at the top of `ship-sinker.js`). Ships go in straight lines, can touch, and can't overlap.
+
+| Board | Ships |
+|---|---|
+| 5×5 | 3, 2 |
+| 6×6 (default) | 3, 2, 2 |
+| 7×7 | 4, 3, 2 |
+| 8×8 | 4, 3, 3, 2 |
+
+At 8×8 the cells drop to about 36px on a 360px phone, a bit under the usual 40px tap target. 5–7 are comfortable.
+
+**Flow**
+1. **Settings bar:** Board − / + (5–8). It can only be changed before either player has locked a fleet
+   (changing it clears the current placement). After that it's shown as read-only pills. The size carries over.
+2. **Gate** (`ui.gate`): "🙈 X, hide your fleet. Y, look away!". The player who places first, and fires first,
+   alternates by round.
+3. **Placement:** a tray of ships (longest first). Pick a ship, then tap a square. The tapped square is the ship's
+   top/left end, and a ship dropped near the edge slides back onto the board. Overlaps shake the square.
+   Desktop hover previews where it will land (red if it doesn't fit). Tapping a placed ship picks it back up.
+   *↻ Rotate* (or the **R** key) switches across/down. There are also *🎲 Random fleet* and *Clear*.
+   **🔒 Lock my fleet** is enabled once every ship is placed. Then comes the second player's gate, then battle.
+   Refreshing during placement always goes back to the gate.
+4. **Battle:** nothing on screen is secret any more, so there's no gate and both players can watch. A turn bar
+   ("🎯 X, fire at Y's waters" plus the last result: miss, hit, or "Sunk a 3-ship!") sits above two boards, one
+   per player's waters. Only the board being fired at is tappable, and it's ringed in the accent colour (and moved
+   to the top on phones). Misses show •, hits 💥, and sunk ships get a red outline over their cells. Each board
+   shows "n / N afloat", the fleet's ship lengths (sunk ones faded) and "hits from shots".
+5. **Done:** a banner "🏆 X sank Y's whole fleet in N shots!" with *Next round*. Unsunk ships are revealed with
+   a dashed outline. The win tally carries over between rounds.
+
+**State** (`state` key)
+```js
+{
+  round: 1, wins: [0, 0], size: 6,
+  first: 0 | 1,                 // places first and fires first; alternates each round
+  phase: 'place' | 'play' | 'done',
+  placer: 0 | 1, gate: true,
+  draft: [{ len: 3, r: 2, c: 1, dir: 'h' | 'v' }] | null,  // r/c null = not placed yet
+  fleets: [ships | null, ships | null],   // fleets[i] = player i's locked ships
+  turn: 0 | 1,                            // who is firing
+  shots: [['0,3', …], […]],               // shots[i] = "row,col" cells player i fired at
+  last: null | { shooter, result: 'miss' | 'hit' | 'sunk', len },
+  winner: null | 0 | 1
+}
+```
+Hits, sinks and "afloat" counts are worked out from `fleets` + `shots`, never stored. Which ship is selected in the
+tray is UI-only (not saved).
+
+**Known limitations:** fleets are stored in plain text in localStorage. Firing first is a small advantage, which is
+why the first player alternates by round.
+
 ---
 
 ## 7. Manual test checklist
@@ -481,7 +542,9 @@ There are no automated tests yet. Before you finish a change:
 **Infrastructure**
 - [x] Manual light/dark toggle in the top bar (`data-theme`).
 - [ ] Settings panel: sound on/off, etc.
-- [ ] More shared helpers as patterns repeat (e.g. the look-away gate screen, timers, a confirm dialog).
+- [ ] More shared helpers as patterns repeat (e.g. timers, a confirm dialog).
+- [x] − / + stepper → `ui.stepper` (20 Questions, Word Budget and Ship Sinker all use it).
+- [x] Look-away gate screen → `ui.gate` (Chain Link, Word Budget and Ship Sinker all use it).
 - [ ] Replace `confirm()` with an in-app modal.
 - [ ] PWA manifest + service worker, so it installs to the home screen and works offline.
 - [ ] Optional automated smoke tests (e.g. Playwright) once there are more games.
@@ -509,6 +572,11 @@ There are no automated tests yet. Before you finish a change:
 - [ ] Grow the word bank, especially Actions and Describing.
 - [ ] Difficulty tags (easy / hard words) and a difficulty setting.
 - [ ] Option to skip or swap a word for a clue penalty (currently the list is fixed by design).
+
+**Ship Sinker**
+- [ ] Optional "hold to peek" at your own fleet during battle.
+- [ ] Ship-shaped variety (e.g. an L-shaped piece) on bigger boards.
+- [ ] Rule toggle: strict alternating turns instead of "hit → shoot again".
 
 **New game ideas** (brainstormed with the user 2026-10-19; ★ = the assistant's top picks)
 - [ ] ★ Categories: random letter + category + short countdown, first to answer taps to score.
@@ -550,3 +618,8 @@ There are no automated tests yet. Before you finish a change:
   hints add +10s, and wrong guesses are no longer counted.
 - **2026-10-26:** Added Word Budget: a clue budget, a fixed word list, both players give clues each round,
   an optional timer, and a word bank of about 1,900 words including South African names.
+- **2026-10-28:** Added Ship Sinker (hidden fleets, 5×5–8×8 boards, hit → shoot again, sunk ships outlined).
+  Added the shared `ui.gate` look-away helper and `.gate` CSS.
+- **2026-10-28:** Refactor: added `ui.stepper` and `.stepper` CSS for − / + settings. 20 Questions, Word Budget and
+  Ship Sinker now use it and their own stepper CSS is gone. No visible change.
+- **2026-10-28:** Refactor: Chain Link and Word Budget gates now use `ui.gate`. Their own gate CSS is gone. No visible change.

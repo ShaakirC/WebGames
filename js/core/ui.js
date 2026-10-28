@@ -8,6 +8,8 @@
  *   ui.toolbar({...})               round pill, win chips, extra actions, New round, Reset scores
  *   ui.confirmFreshMatch()          the standard "reset scores + round" confirm
  *   ui.secretPanel({...})           hidden-entry → locked → revealed panel for a secret
+ *   ui.stepper({...})               settings-bar "LABEL − value +" control
+ *   ui.gate({...})                "look away" card shown before one player's private screen
  *   ui.inlineEditor({...})          edit list rows in place (Enter/Save, Esc, blur saves)
  *
  * See docs/PLANNING.md §4.6 for usage.
@@ -153,6 +155,49 @@
   }
 
   // ---------------------------------------------------------------------------
+  // − / + stepper for a settings bar: LABEL [−] value [+] [extra…]
+  //   label                    shown before the buttons (and the group's aria-label unless groupLabel is given)
+  //   value                    text or number to show between the buttons
+  //   onMinus, onPlus          click handlers
+  //   canMinus, canPlus        false disables that button (default true)
+  //   minusLabel, plusLabel    aria-labels (default "Decrease <label>" / "Increase <label>")
+  //   extra                    optional nodes after + (e.g. an ∞ toggle; give buttons class stepper__btn)
+  // ---------------------------------------------------------------------------
+  function stepper(opts) {
+    const {
+      label, groupLabel = label, value,
+      onMinus, onPlus, canMinus = true, canPlus = true,
+      minusLabel = `Decrease ${label.toLowerCase()}`,
+      plusLabel = `Increase ${label.toLowerCase()}`,
+      extra,
+    } = opts;
+    return h('div', { class: 'stepper', role: 'group', 'aria-label': groupLabel },
+      h('span', { class: 'settings-bar__label stepper__label' }, label),
+      h('button', { class: 'btn btn--sm stepper__btn', 'aria-label': minusLabel, disabled: !canMinus, onclick: onMinus }, '−'),
+      h('span', { class: 'stepper__value', 'aria-live': 'polite' }, value),
+      h('button', { class: 'btn btn--sm stepper__btn', 'aria-label': plusLabel, disabled: !canPlus, onclick: onPlus }, '+'),
+      extra
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Look-away gate: a centred card in one player's colour shown before private info.
+  //   player       the player about to act (for colours)
+  //   emoji, title, text
+  //   body         optional extra nodes between the text and the button (settings, rules…)
+  //   actionLabel, onAction   the big button that leaves the gate
+  // ---------------------------------------------------------------------------
+  function gate({ player, emoji = '🙈', title, text, body, actionLabel, onAction }) {
+    return h('div', { class: `card gate ${player.cssClass}` },
+      h('div', { class: 'gate__emoji', 'aria-hidden': 'true' }, emoji),
+      h('h2', { class: 'gate__title' }, title),
+      text && h('p', { class: 'gate__text' }, text),
+      body,
+      onAction && h('button', { class: 'btn btn--primary btn--xl', onclick: onAction }, actionLabel)
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // Inline editor for list rows, one row at a time. Keys are strings you choose (e.g. "0:3").
   //   getText(key)       -> current text of that row
   //   save(key, text)    -> store the trimmed text. Return true if a FULL redraw is needed
@@ -217,6 +262,6 @@
   }
 
   GameHub.ui = {
-    renderInto, focus, shake, toolbar, confirmFreshMatch, secretPanel, inlineEditor,
+    renderInto, focus, shake, toolbar, confirmFreshMatch, secretPanel, stepper, gate, inlineEditor,
   };
 })();

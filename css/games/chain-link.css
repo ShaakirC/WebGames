@@ -12,20 +12,8 @@
 
 .game--chain-link .banner.is-draw { --pc: var(--accent); --pc-soft: var(--accent-soft); }
 
-/* ---------- Gate (look-away screen) ---------- */
-.game--chain-link .cl-gate {
-  display: grid;
-  justify-items: center;
-  gap: 14px;
-  max-width: 560px;
-  margin: 24px auto 0;
-  padding: 32px 20px;
-  text-align: center;
-  border-top: 5px solid var(--pc);
-}
-.game--chain-link .cl-gate__emoji { font-size: 3.5rem; line-height: 1; }
-.game--chain-link .cl-gate__title { font-size: 1.5rem; font-weight: 850; color: var(--pc); }
-.game--chain-link .cl-gate__text { margin: 0; color: var(--muted); font-size: 1.1rem; }
+/* ---------- Gate (look-away screen; the card comes from base.css) ---------- */
+.game--chain-link .gate { margin-top: 24px; }
 .game--chain-link .cl-length { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; }
 .game--chain-link .cl-length__label { margin-right: 4px; font-size: .85rem; font-weight: 650; color: var(--muted); }
 .game--chain-link .cl-length .btn { min-width: 42px; }
