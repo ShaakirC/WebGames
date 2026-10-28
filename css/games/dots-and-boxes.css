@@ -1,0 +1,111 @@
+/* Dots & Boxes: everything scoped under .game--dots-and-boxes.
+   Settings bar, stepper, banner and toolbar come from base.css. */
+
+.game--dots-and-boxes .banner.is-draw { --pc: var(--accent); --pc-soft: var(--accent-soft); }
+.game--dots-and-boxes .db-summary { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+
+.game--dots-and-boxes .db {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+/* ---------- Scores + turn ---------- */
+.game--dots-and-boxes .db-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.game--dots-and-boxes .db-score {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 5px solid var(--pc);
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+.game--dots-and-boxes .db-score.is-turn { background: var(--pc-soft); border-color: var(--pc); }
+.game--dots-and-boxes .db-score__name { font-weight: 800; color: var(--pc); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.game--dots-and-boxes .db-score__value { font-size: 1.6rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+.game--dots-and-boxes .db-turn { margin: 0; font-size: 1.1rem; font-weight: 750; color: var(--pc); text-align: center; overflow-wrap: anywhere; }
+
+/* ---------- Grid ----------
+   Even tracks (thin) hold dots and the ends of lines; odd tracks (wide) hold boxes and line bodies. */
+.game--dots-and-boxes .db-grid {
+  --dot: 14px;
+  --line: 6px;
+  --reach: 12px; /* extra tap area on each side of a line */
+  display: grid;
+  grid-template-columns: repeat(var(--n), var(--dot) minmax(0, 1fr)) var(--dot);
+  width: 100%;
+  padding: var(--reach);
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.game--dots-and-boxes .db-dot {
+  position: relative;
+  z-index: 3;
+  width: var(--dot); height: var(--dot);
+  border-radius: 50%;
+  background: var(--text);
+  pointer-events: none;
+}
+
+.game--dots-and-boxes .db-box { aspect-ratio: 1; display: grid; place-items: center; }
+.game--dots-and-boxes .db-box.is-claimed { background: var(--pc-soft); }
+.game--dots-and-boxes .db-box.is-claimed::after {
+  content: '';
+  width: 42%; aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--pc);
+  animation: pop .35s ease;
+}
+
+/* A line is a button filling its track; ::after is the visible stroke, ::before widens the tap area. */
+.game--dots-and-boxes .db-line {
+  position: relative;
+  z-index: 1;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.game--dots-and-boxes .db-line::before { content: ''; position: absolute; }
+.game--dots-and-boxes .db-line--h::before { inset: calc(-1 * var(--reach)) 0; }
+.game--dots-and-boxes .db-line--v::before { inset: 0 calc(-1 * var(--reach)); }
+.game--dots-and-boxes .db-line::after {
+  content: '';
+  position: absolute;
+  border-radius: 999px;
+  background: var(--border);
+  transition: background-color .15s ease;
+}
+.game--dots-and-boxes .db-line--h::after { left: -2px; right: -2px; top: 50%; height: var(--line); transform: translateY(-50%); }
+.game--dots-and-boxes .db-line--v::after { top: -2px; bottom: -2px; left: 50%; width: var(--line); transform: translateX(-50%); }
+/* Undrawn lines are faint dashes so they can't be mistaken for drawn ones. */
+.game--dots-and-boxes .db-line--h:not(.is-drawn)::after { height: 3px; background: repeating-linear-gradient(90deg, var(--border) 0 6px, transparent 6px 11px); }
+.game--dots-and-boxes .db-line--v:not(.is-drawn)::after { width: 3px; background: repeating-linear-gradient(180deg, var(--border) 0 6px, transparent 6px 11px); }
+.game--dots-and-boxes .db-line:not(:disabled):hover::after,
+.game--dots-and-boxes .db-line:not(:disabled):focus-visible::after {
+  height: auto; width: auto;
+  background: color-mix(in srgb, var(--pc) 55%, transparent);
+}
+.game--dots-and-boxes .db-line--h:not(:disabled):hover::after,
+.game--dots-and-boxes .db-line--h:not(:disabled):focus-visible::after { height: var(--line); }
+.game--dots-and-boxes .db-line--v:not(:disabled):hover::after,
+.game--dots-and-boxes .db-line--v:not(:disabled):focus-visible::after { width: var(--line); }
+.game--dots-and-boxes .db-line:focus-visible { outline: none; }
+.game--dots-and-boxes .db-line:focus-visible::before { outline: 3px solid var(--accent); outline-offset: -6px; border-radius: 8px; }
+.game--dots-and-boxes .db-line:disabled { cursor: default; }
+.game--dots-and-boxes .db-line.is-drawn { z-index: 2; }
+.game--dots-and-boxes .db-line.is-drawn::after { background: var(--pc); }
+.game--dots-and-boxes .db-line.is-last::after { box-shadow: 0 0 0 3px var(--pc-soft); animation: pop .3s ease; }
+
+@media (max-width: 420px) {
+  .game--dots-and-boxes .db-grid { --dot: 12px; --line: 5px; --reach: 10px; }
+}

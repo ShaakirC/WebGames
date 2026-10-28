@@ -199,6 +199,7 @@ All keys are prefixed `gamenight:`.
 | `gamenight:game:word-budget:seen` | Word Budget | every word dealt so far (lowercase). Kept across rounds and score resets so words don't repeat |
 | `gamenight:game:ship-sinker:state` | Ship Sinker | see §6.6 |
 | `gamenight:game:four-up:state` | Four Up | see §6.7 |
+| `gamenight:game:dots-and-boxes:state` | Dots & Boxes | see §6.8 |
 
 If you change a game's state shape incompatibly, either migrate it in `mount()`
 or rename the key (e.g. `state.v2`) so old saves don't crash the game.
@@ -565,6 +566,42 @@ wins the round. A full board with no line is a draw. Who goes first alternates b
 ```
 Which token is falling is UI-only. A refresh mid-fall just shows the token in place.
 
+### 6.8 Dots & Boxes (`dots-and-boxes`)
+**How it's played:** start with a grid of dots. Players take turns joining two neighbouring dots with a line.
+Drawing the **fourth side of a box claims it** (a dot in your colour) and **earns another turn**. One line can close
+two boxes at once, which claims both. When every line is drawn, whoever owns the most boxes wins the round. With an
+even number of boxes a tie is possible (a draw, which doesn't change the tally). Who goes first alternates by round.
+
+**UI**
+- Toolbar: round, win tally, *New round* (asks first if a game is in progress), *Reset scores*.
+- **Settings bar:** a Grid stepper (`ui.stepper`), 3×3 to 6×6 boxes, default 4×4. It can only be changed before
+  the first line, then it's shown as a read-only pill. The size carries over between rounds.
+- **Score cards** for both players (box counts). The current player's card is tinted. Under them is the turn line:
+  "X's turn: draw a line." or "✨ Box! X, go again."
+- **Grid:** a `(2n+1)×(2n+1)` CSS grid. Even tracks are thin (`--dot`) and hold the dots, odd tracks are wide and
+  hold the boxes. Each line is a `<button>` filling its track: `::after` is the visible stroke and `::before` adds
+  `--reach` px of tap area on each side. Undrawn lines are faint dashes; hover/focus previews the line in the
+  current player's colour. Drawn lines are solid in the colour of whoever drew them, and the latest line has a soft
+  halo. Claimed boxes get a tint and a dot in the owner's colour.
+- At 6×6 on a 375px phone the boxes are about 40px and the tap strip across a line is about 32px. 3–5 are roomier.
+- **End:** "🏆 X wins 10–6!" or "🤝 8–8. It's a draw!" with *Next round*. All lines are disabled.
+
+**State** (`state` key)
+```js
+{
+  round: 1, wins: [0, 0], size: 4,       // boxes per side
+  first: 0 | 1, turn: 0 | 1,
+  hLines: [[null | 0 | 1, …n], …n+1],    // hLines[r][c]: dot (r,c) → (r,c+1), value = who drew it
+  vLines: [[null | 0 | 1, …n+1], …n],    // vLines[r][c]: dot (r,c) → (r+1,c)
+  boxes:  [[null | 0 | 1, …n], …n],      // owner of each box
+  moves: 0,
+  last: null | { kind: 'h' | 'v', r, c },
+  again: false,                          // the latest line claimed a box
+  winner: null | 0 | 1 | 'draw'
+}
+```
+Scores are counted from `boxes`, never stored.
+
 ---
 
 ## 7. Manual test checklist
@@ -625,6 +662,10 @@ There are no automated tests yet. Before you finish a change:
 - [ ] Board size options (e.g. 6×5, 8×7) and a "five in a row" variant.
 - [ ] A short "who's first" coin-flip instead of strict alternation.
 
+**Dots & Boxes**
+- [ ] Undo last line.
+- [ ] Rectangular grids (e.g. 5×3) and bigger boards for tablets.
+
 **New game ideas** (brainstormed with the user 2026-10-19; ★ = the assistant's top picks)
 - [ ] ★ Categories: random letter + category + short countdown, first to answer taps to score.
 - [ ] ★ Would You Rather, "sync" mode: both secretly pick A/B, reveal together, score matches.
@@ -672,3 +713,4 @@ There are no automated tests yet. Before you finish a change:
 - **2026-10-28:** Refactor: Chain Link and Word Budget gates now use `ui.gate`. Their own gate CSS is gone. No visible change.
 - **2026-10-28:** Ship Sinker: added "👁 Hold to peek" under each board to see your own hidden ships during battle.
 - **2026-10-28:** Added Four Up (four-in-a-row): ◀ / ▶ aim + Drop button under the board, a 1s falling-token animation, winning-line highlight.
+- **2026-10-28:** Added Dots & Boxes (3×3–6×6 grid via `ui.stepper`, closing a box claims it and gives another turn, most boxes wins).
