@@ -198,6 +198,7 @@ All keys are prefixed `gamenight:`.
 | `gamenight:game:word-budget:state` | Word Budget | see §6.5 |
 | `gamenight:game:word-budget:seen` | Word Budget | every word dealt so far (lowercase). Kept across rounds and score resets so words don't repeat |
 | `gamenight:game:ship-sinker:state` | Ship Sinker | see §6.6 |
+| `gamenight:game:four-up:state` | Four Up | see §6.7 |
 
 If you change a game's state shape incompatibly, either migrate it in `mount()`
 or rename the key (e.g. `state.v2`) so old saves don't crash the game.
@@ -527,6 +528,43 @@ tray is UI-only (not saved).
 **Known limitations:** fleets are stored in plain text in localStorage. Firing first is a small advantage, which is
 why the first player alternates by round.
 
+### 6.7 Four Up (`four-up`)
+**How it's played:** the classic four-in-a-row genre. Players take turns dropping a token into a 7-column × 6-row
+upright grid, and it falls to the lowest free slot. The first to line up **four or more** across, down or diagonally
+wins the round. A full board with no line is a draw. Who goes first alternates by round. Nothing is secret, so there's no gate.
+
+**UI**
+- Toolbar: round, win tally, *New round* (asks first if a game is in progress), *Reset scores*.
+- A "● X's turn" pill in the current player's colour.
+- **Board:** one CSS grid. Row 1 is the aiming row, where the current player's token bobs above the chosen column.
+  Row 2 is a spacer, and rows 3–8 are the board: an accent-coloured frame (`.c4-frame`, a grid item spanning the
+  board rows) with a hole per cell. The aimed column's holes are tinted in the player's colour. The latest token has a small dot.
+- **Controls under the board** (as the user asked): **◀** and **▶** move the aim, skipping full columns, and are
+  disabled when there's no open column that way. **⬇ Drop in column N** drops the token. Tapping any cell or aiming
+  slot also moves the aim there (it never drops). Keys: **← / →** aim, **↓** drops. The listener is removed on leaving.
+  After a drop the aim stays in the same column, or slides to the nearest open one if that column is now full.
+- **Drop animation (1s):** the new token is rendered in its final cell with `.is-falling`, and `c4-fall` translates it
+  from the aiming row (`--fall` = cells to fall, so the distance is `--fall × (cell + gap) + spacer + gap`) with a
+  gravity ease-in and two small bounces. The state is saved straight away, but all controls are locked and the turn
+  pill and banner wait until it lands (`FALL_MS` = 1000, kept in sync with the CSS). Under `prefers-reduced-motion`
+  there's no animation and no wait.
+- **End:** "🏆 X got four in a row!" or "🤝 The board is full. It's a draw!" with *Next round*. The winning tokens get a
+  pulsing ring. Draws don't change the win tally.
+
+**State** (`state` key)
+```js
+{
+  round: 1, wins: [0, 0],
+  first: 0 | 1, turn: 0 | 1,
+  board: [[null | 0 | 1, …7], …6],   // board[r][c], row 0 is the top
+  cursor: 3,                         // aimed column (kept through a refresh)
+  last: [r, c] | null, moves: 0,
+  winner: null | 0 | 1 | 'draw',
+  line: [[r, c], …]                  // winning cells (4+, may include more than one line)
+}
+```
+Which token is falling is UI-only. A refresh mid-fall just shows the token in place.
+
 ---
 
 ## 7. Manual test checklist
@@ -582,6 +620,11 @@ There are no automated tests yet. Before you finish a change:
 - [ ] Ship-shaped variety (e.g. an L-shaped piece) on bigger boards.
 - [ ] Rule toggle: strict alternating turns instead of "hit → shoot again".
 
+**Four Up**
+- [ ] Undo last move.
+- [ ] Board size options (e.g. 6×5, 8×7) and a "five in a row" variant.
+- [ ] A short "who's first" coin-flip instead of strict alternation.
+
 **New game ideas** (brainstormed with the user 2026-10-19; ★ = the assistant's top picks)
 - [ ] ★ Categories: random letter + category + short countdown, first to answer taps to score.
 - [ ] ★ Would You Rather, "sync" mode: both secretly pick A/B, reveal together, score matches.
@@ -628,3 +671,4 @@ There are no automated tests yet. Before you finish a change:
   Ship Sinker now use it and their own stepper CSS is gone. No visible change.
 - **2026-10-28:** Refactor: Chain Link and Word Budget gates now use `ui.gate`. Their own gate CSS is gone. No visible change.
 - **2026-10-28:** Ship Sinker: added "👁 Hold to peek" under each board to see your own hidden ships during battle.
+- **2026-10-28:** Added Four Up (four-in-a-row): ◀ / ▶ aim + Drop button under the board, a 1s falling-token animation, winning-line highlight.

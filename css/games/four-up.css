@@ -1,0 +1,134 @@
+/* Four Up: everything scoped under .game--four-up.
+   Banner, toolbar and buttons come from base.css. */
+
+.game--four-up .banner.is-draw { --pc: var(--accent); --pc-soft: var(--accent-soft); }
+
+.game--four-up .c4 {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.game--four-up .c4-turn {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: var(--pc-soft);
+  color: var(--pc);
+  font-size: 1.2rem; font-weight: 850;
+  overflow-wrap: anywhere;
+}
+.game--four-up .c4-turn__dot { flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--pc); }
+
+/* ---------- Board ----------
+   One grid: row 1 = aiming row, row 2 = spacer, rows 3–8 = the board.
+   The frame is a grid item spanning the board rows; cells and tokens sit on top of it. */
+.game--four-up .c4-board {
+  --gap: 6px;
+  --spacer: 10px;
+  --pad: 8px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: auto var(--spacer) repeat(6, auto);
+  gap: var(--gap);
+  width: 100%;
+  padding: 0 var(--pad) var(--pad);
+}
+.game--four-up .c4-frame {
+  grid-row: 3 / -1;
+  grid-column: 1 / -1;
+  margin: calc(-1 * var(--pad));
+  border-radius: var(--radius);
+  background: var(--accent);
+  box-shadow: var(--shadow);
+}
+.game--four-up .c4-aim,
+.game--four-up .c4-cell {
+  position: relative;
+  aspect-ratio: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+/* The hole in the frame */
+.game--four-up .c4-cell::before {
+  content: '';
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  background: var(--bg);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, .18);
+}
+.game--four-up .c4-cell.is-aimed::before { background: color-mix(in srgb, var(--pc-soft) 70%, var(--bg)); }
+
+/* A token fills its cell (so the fall distance is a whole number of cells); the disc is ::before. */
+.game--four-up .c4-token {
+  position: relative;
+  z-index: 1;
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+.game--four-up .c4-token::before {
+  content: '';
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: var(--pc);
+  box-shadow: inset 0 -4px 0 color-mix(in srgb, black 22%, var(--pc)), inset 0 3px 0 color-mix(in srgb, white 25%, var(--pc));
+}
+.game--four-up .c4-token.is-ghost { animation: c4-bob 1.4s ease-in-out infinite; }
+.game--four-up .c4-token.is-last::after {
+  content: '';
+  position: absolute;
+  inset: 42%;
+  border-radius: 50%;
+  background: var(--surface);
+  opacity: .85;
+}
+.game--four-up .c4-token.is-win::before {
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--pc);
+  animation: c4-pulse 1s ease-in-out infinite alternate;
+}
+
+/* Falls from the aiming row down --fall cells, with a small bounce. Total 1s (FALL_MS in four-up.js). */
+.game--four-up .c4-token.is-falling {
+  --from: calc(-1 * (var(--fall) * (100% + var(--gap)) + var(--spacer) + var(--gap)));
+  z-index: 2;
+  animation: c4-fall 1s linear both;
+}
+@keyframes c4-fall {
+  0%   { transform: translateY(var(--from)); animation-timing-function: cubic-bezier(.5, 0, 1, .6); }
+  72%  { transform: translateY(0);           animation-timing-function: ease-out; }
+  84%  { transform: translateY(-14%);        animation-timing-function: ease-in; }
+  94%  { transform: translateY(0);           animation-timing-function: ease-out; }
+  97%  { transform: translateY(-3%);         animation-timing-function: ease-in; }
+  100% { transform: translateY(0); }
+}
+@keyframes c4-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8%); }
+}
+@keyframes c4-pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+
+/* ---------- Controls ---------- */
+.game--four-up .c4-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+.game--four-up .c4-arrow { flex: none; width: 64px; padding: 0; font-size: 1.4rem; }
+.game--four-up .c4-drop { flex: 1 1 auto; max-width: 280px; padding-inline: 14px; }
+.game--four-up .c4-keys { margin: 0; color: var(--muted); font-size: .85rem; text-align: center; }
+
+@media (max-width: 420px) {
+  .game--four-up .c4-board { --gap: 4px; --pad: 6px; }
+  .game--four-up .c4-arrow { width: 56px; }
+  .game--four-up .c4-drop { font-size: 1.05rem; }
+}
